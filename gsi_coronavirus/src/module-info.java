@@ -1,2 +1,0 @@
-module gsi_coronavirus {
-}
