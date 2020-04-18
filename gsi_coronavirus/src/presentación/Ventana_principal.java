@@ -14,12 +14,13 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
-import net.miginfocom.swing.MigLayout;
+//import net.miginfocom.swing.MigLayout;
 
 import java.awt.GridBagLayout;
 import java.awt.Image;
 
 import javax.imageio.ImageIO;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -28,11 +29,16 @@ import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Vector;
 import java.awt.event.ActionEvent;
 import javax.swing.JLabel;
 import java.awt.Frame;
@@ -42,6 +48,10 @@ import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import javax.swing.JComboBox;
 import com.toedter.calendar.JCalendar;
+
+import dominio.Contagiado;
+import dominio.Localidad;
+
 import javax.swing.JList;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
@@ -53,6 +63,13 @@ public class Ventana_principal extends JFrame {
 	private JPanel contentPane;
 	private JFrame frame;
 	private JPanel panelLogo;
+	private Vector<Localidad> localidades;
+	private Vector<Contagiado> contagiados;
+	private JLabel lblPoblacin;
+	private JComboBox comboBox;
+	private JLabel lblNewLabel;
+	private GridBagConstraints gbc_btnEntrar;
+	private JCalendar calendar;
 
 	/**
 	 * Launch the application.
@@ -99,7 +116,7 @@ public class Ventana_principal extends JFrame {
 		frame.setUndecorated(true);
 		frame.setVisible(true);
 		JPanel panelMapa = new JPanel();
-	
+
 		panelMapa.setBounds(22, 11, 1500, 1000);
 		GridBagConstraints gbc_panelMapa = new GridBagConstraints();
 		gbc_panelMapa.fill = GridBagConstraints.BOTH;
@@ -139,14 +156,21 @@ public class Ventana_principal extends JFrame {
 		gbl_panel.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE };
 		panel.setLayout(gbl_panel);
 
-		JLabel lblNewLabel = new JLabel("Localizar ciudad");
+		lblNewLabel = new JLabel("Localizar ciudad");
 		GridBagConstraints gbc_lblNewLabel = new GridBagConstraints();
 		gbc_lblNewLabel.insets = new Insets(0, 0, 5, 5);
 		gbc_lblNewLabel.gridx = 1;
 		gbc_lblNewLabel.gridy = 1;
 		panel.add(lblNewLabel, gbc_lblNewLabel);
 
-		JComboBox comboBox = new JComboBox();
+		comboBox = new JComboBox();
+
+		localidades = Localidad.readAll();
+		String[] nombresLocalidades = getNombresLocalidades(localidades);
+
+		comboBox.setModel(new DefaultComboBoxModel(nombresLocalidades)); // $NON-NLS-1$ //$NON-NLS-2$
+
+		comboBox.addItemListener(new SeleccionarLocalidad());
 		GridBagConstraints gbc_comboBox = new GridBagConstraints();
 		gbc_comboBox.fill = GridBagConstraints.HORIZONTAL;
 		gbc_comboBox.insets = new Insets(0, 0, 5, 5);
@@ -161,22 +185,24 @@ public class Ventana_principal extends JFrame {
 		gbc_lblDatosPorFechas.gridy = 4;
 		panel.add(lblDatosPorFechas, gbc_lblDatosPorFechas);
 
-		JCalendar calendar = new JCalendar();
+		calendar = new JCalendar();
+
 		GridBagConstraints gbc_calendar = new GridBagConstraints();
 		gbc_calendar.fill = GridBagConstraints.BOTH;
 		gbc_calendar.insets = new Insets(0, 0, 5, 5);
 		gbc_calendar.gridx = 1;
 		gbc_calendar.gridy = 5;
 		panel.add(calendar, gbc_calendar);
-		
-				JButton btnVerDatosDe = new JButton("Realizar b\u00FAsqueda");
-				GridBagConstraints gbc_btnVerDatosDe = new GridBagConstraints();
-				gbc_btnVerDatosDe.insets = new Insets(0, 0, 5, 5);
-				gbc_btnVerDatosDe.gridx = 1;
-				gbc_btnVerDatosDe.gridy = 7;
-				panel.add(btnVerDatosDe, gbc_btnVerDatosDe);
+
+		JButton btnRealizarBusqueda = new JButton("Realizar b\u00FAsqueda");
+		btnRealizarBusqueda.addActionListener(new ButtonRealizarBusquedaActionListener());
+		GridBagConstraints gbc_btnRealizarBusqueda = new GridBagConstraints();
+		gbc_btnRealizarBusqueda.insets = new Insets(0, 0, 5, 5);
+		gbc_btnRealizarBusqueda.gridx = 1;
+		gbc_btnRealizarBusqueda.gridy = 7;
+		panel.add(btnRealizarBusqueda, gbc_btnRealizarBusqueda);
 		contentPane.add(panelMapa, gbc_panelMapa);
-		
+
 		JPanel panelResultados = new JPanel();
 		panelResultados.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
 		GridBagConstraints gbc_panelResultados = new GridBagConstraints();
@@ -188,34 +214,65 @@ public class Ventana_principal extends JFrame {
 		gbc_panelResultados.gridy = 3;
 		contentPane.add(panelResultados, gbc_panelResultados);
 		GridBagLayout gbl_panelResultados = new GridBagLayout();
-		gbl_panelResultados.columnWidths = new int[]{31, 46, 0, 0, 24, 0};
-		gbl_panelResultados.rowHeights = new int[]{28, 14, 0, 0, 0, 24, 0};
-		gbl_panelResultados.columnWeights = new double[]{0.0, 0.0, 1.0, 1.0, 0.0, Double.MIN_VALUE};
-		gbl_panelResultados.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 1.0, 0.0, Double.MIN_VALUE};
+		gbl_panelResultados.columnWidths = new int[] { 31, 46, 0, 36, 24, 0 };
+		gbl_panelResultados.rowHeights = new int[] { 28, 14, 0, 0, 0, 24, 23, 0 };
+		gbl_panelResultados.columnWeights = new double[] { 0.0, 0.0, 1.0, 0.0, 0.0, Double.MIN_VALUE };
+		gbl_panelResultados.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, Double.MIN_VALUE };
 		panelResultados.setLayout(gbl_panelResultados);
-		
+
+		JLabel lblPoblacin = new JLabel("Poblaci\u00F3n:");
+		GridBagConstraints gbc_lblPoblacin = new GridBagConstraints();
+		gbc_lblPoblacin.anchor = GridBagConstraints.WEST;
+		gbc_lblPoblacin.insets = new Insets(0, 0, 5, 5);
+		gbc_lblPoblacin.gridx = 1;
+		gbc_lblPoblacin.gridy = 1;
+		panelResultados.add(lblPoblacin, gbc_lblPoblacin);
+
+		JLabel label_2 = new JLabel("0");
+		GridBagConstraints gbc_label_2 = new GridBagConstraints();
+		gbc_label_2.insets = new Insets(0, 0, 5, 5);
+		gbc_label_2.gridx = 2;
+		gbc_label_2.gridy = 1;
+		panelResultados.add(label_2, gbc_label_2);
+
+		JLabel label = new JLabel("0");
+		GridBagConstraints gbc_label = new GridBagConstraints();
+		gbc_label.insets = new Insets(0, 0, 5, 5);
+		gbc_label.gridx = 2;
+		gbc_label.gridy = 2;
+		panelResultados.add(label, gbc_label);
+
 		JLabel lblNumContagiados = new JLabel("N\u00FAmero de contagiados:");
 		GridBagConstraints gbc_lblNumContagiados = new GridBagConstraints();
 		gbc_lblNumContagiados.insets = new Insets(0, 0, 5, 5);
 		gbc_lblNumContagiados.anchor = GridBagConstraints.NORTH;
 		gbc_lblNumContagiados.gridx = 1;
-		gbc_lblNumContagiados.gridy = 1;
+		gbc_lblNumContagiados.gridy = 2;
 		panelResultados.add(lblNumContagiados, gbc_lblNumContagiados);
-		
-		JLabel label = new JLabel("0");
-		GridBagConstraints gbc_label = new GridBagConstraints();
-		gbc_label.insets = new Insets(0, 0, 5, 5);
-		gbc_label.gridx = 2;
-		gbc_label.gridy = 1;
-		panelResultados.add(label, gbc_label);
-		
-		JButton btnVerDatosDe_1 = new JButton("Ver datos de los contagiados");
-		GridBagConstraints gbc_btnVerDatosDe_1 = new GridBagConstraints();
-		gbc_btnVerDatosDe_1.gridwidth = 3;
-		gbc_btnVerDatosDe_1.insets = new Insets(0, 0, 0, 5);
-		gbc_btnVerDatosDe_1.gridx = 1;
-		gbc_btnVerDatosDe_1.gridy = 5;
-		panelResultados.add(btnVerDatosDe_1, gbc_btnVerDatosDe_1);
+
+		JLabel label_1 = new JLabel("0");
+		GridBagConstraints gbc_label_1 = new GridBagConstraints();
+		gbc_label_1.insets = new Insets(0, 0, 5, 5);
+		gbc_label_1.gridx = 2;
+		gbc_label_1.gridy = 3;
+		panelResultados.add(label_1, gbc_label_1);
+
+		JButton btnVerDatosContagiados = new JButton("Ver datos de los contagiados");
+		btnVerDatosContagiados.addActionListener(new ButtonVerDatosActionListener());
+
+		JLabel lblNmeroDeCurados = new JLabel("N\u00FAmero de curados:");
+		GridBagConstraints gbc_lblNmeroDeCurados = new GridBagConstraints();
+		gbc_lblNmeroDeCurados.anchor = GridBagConstraints.WEST;
+		gbc_lblNmeroDeCurados.insets = new Insets(0, 0, 5, 5);
+		gbc_lblNmeroDeCurados.gridx = 1;
+		gbc_lblNmeroDeCurados.gridy = 3;
+		panelResultados.add(lblNmeroDeCurados, gbc_lblNmeroDeCurados);
+		GridBagConstraints gbc_btnVerDatosContagiados = new GridBagConstraints();
+		gbc_btnVerDatosContagiados.gridwidth = 3;
+		gbc_btnVerDatosContagiados.insets = new Insets(0, 0, 5, 5);
+		gbc_btnVerDatosContagiados.gridx = 1;
+		gbc_btnVerDatosContagiados.gridy = 5;
+		panelResultados.add(btnVerDatosContagiados, gbc_btnVerDatosContagiados);
 
 		GridBagConstraints gbc_btnAbrirBbdd = new GridBagConstraints();
 		gbc_btnAbrirBbdd.insets = new Insets(0, 0, 5, 5);
@@ -226,20 +283,63 @@ public class Ventana_principal extends JFrame {
 		gbc_labelBBDDSeleccionada.gridx = 2;
 		gbc_labelBBDDSeleccionada.gridy = 4;
 
-		GridBagConstraints gbc_btnEntrar = new GridBagConstraints();
+		gbc_btnEntrar = new GridBagConstraints();
 		gbc_btnEntrar.insets = new Insets(0, 0, 5, 5);
 		gbc_btnEntrar.gridx = 2;
 		gbc_btnEntrar.gridy = 5;
 
 		SwingUtilities.invokeLater(() -> {
 			BrowserView view = BrowserView.newInstance(browser);
-			//panelMapa.setSize(900, 900);
-			//view.setSize(900, 900);
-		
+			// panelMapa.setSize(900, 900);
+			// view.setSize(900, 900);
+
 			panelMapa.add(view);
 			pack();
 		});
 
+	}
+
+	private class SeleccionarLocalidad implements ItemListener {
+		public void itemStateChanged(ItemEvent e) {
+			System.out.println("Bien");
+			// Luego ya si eso
+		}
+
+	}
+
+	private class ButtonRealizarBusquedaActionListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+
+		}
+
+	}
+
+	private class ButtonVerDatosActionListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			String localidad = comboBox.getSelectedItem().toString();
+
+			//Aquí cambiamos el formato de fecha para que MySQL se lo trague
+			Date fecha = calendar.getDate();
+			String pattern = "yyyy-MM-dd";
+			SimpleDateFormat formatter = new SimpleDateFormat(pattern);
+			String fechaMYSQL = formatter.format(fecha);
+			
+			Datos_contagiados frameDC = new Datos_contagiados(localidad, fechaMYSQL);
+
+			frameDC.setVisible(true);
+		}
+
+	}
+
+	private String[] getNombresLocalidades(Vector<Localidad> localidades) {
+		int num_localidades = localidades.size();
+		String[] nombres = new String[num_localidades];
+
+		for (int i = 0; i < num_localidades; i++) {
+			nombres[i] = localidades.elementAt(i).getNombre();
+		}
+
+		return nombres;
 	}
 
 }

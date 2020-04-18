@@ -7,5 +7,14 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.48.jar"/>
+	<classpathentry kind="lib" path="lib/jcalendar-1.4.jar"/>
+	<classpathentry kind="lib" path="lib/jxbrowser-7.6.jar"/>
+	<classpathentry kind="lib" path="lib/jxbrowser-javafx-7.6.jar"/>
+	<classpathentry kind="lib" path="lib/jxbrowser-linux64-7.6.jar"/>
+	<classpathentry kind="lib" path="lib/jxbrowser-linux64-arm-7.6.jar"/>
+	<classpathentry kind="lib" path="lib/jxbrowser-mac-7.6.jar"/>
+	<classpathentry kind="lib" path="lib/jxbrowser-swing-7.6.jar"/>
+	<classpathentry kind="lib" path="lib/jxbrowser-win32-7.6.jar"/>
+	<classpathentry kind="lib" path="lib/jxbrowser-win64-7.6.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
