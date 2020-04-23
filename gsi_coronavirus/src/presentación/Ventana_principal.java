@@ -70,6 +70,12 @@ public class Ventana_principal extends JFrame {
 	private JLabel lblNewLabel;
 	private GridBagConstraints gbc_btnEntrar;
 	private JCalendar calendar;
+	private JLabel label_2;
+	private JLabel label;
+	private JLabel label_1;
+	private JPanel panelMapa;
+	private Browser browser;
+	private Engine engine;
 
 	/**
 	 * Launch the application.
@@ -95,8 +101,8 @@ public class Ventana_principal extends JFrame {
 		System.setProperty("jxbrowser.license.key",
 				"1BNDHFSC1FV65BLSXDRI6447N116NYY0FFYHL7W3TZEMO2ATOZ1LBHU704PE3IPEBL5R40");
 
-		Engine engine = Engine.newInstance(EngineOptions.newBuilder(HARDWARE_ACCELERATED).build());
-		Browser browser = engine.newBrowser();
+		engine = Engine.newInstance(EngineOptions.newBuilder(HARDWARE_ACCELERATED).build());
+		browser = engine.newBrowser();
 		browser.navigation()
 				.loadUrl("https://www.openstreetmap.org/?mlat=38.98626&mlon=-3.92907#map=16/38.9857/-3.9301");
 		// BrowserView view = new BrowserView(browser);
@@ -115,7 +121,7 @@ public class Ventana_principal extends JFrame {
 		setExtendedState(JFrame.MAXIMIZED_BOTH);
 		frame.setUndecorated(true);
 		frame.setVisible(true);
-		JPanel panelMapa = new JPanel();
+		panelMapa = new JPanel();
 
 		panelMapa.setBounds(22, 11, 1500, 1000);
 		GridBagConstraints gbc_panelMapa = new GridBagConstraints();
@@ -169,7 +175,7 @@ public class Ventana_principal extends JFrame {
 		String[] nombresLocalidades = getNombresLocalidades(localidades);
 
 		comboBox.setModel(new DefaultComboBoxModel(nombresLocalidades)); // $NON-NLS-1$ //$NON-NLS-2$
-
+		comboBox.setSelectedIndex(5);
 		comboBox.addItemListener(new SeleccionarLocalidad());
 		GridBagConstraints gbc_comboBox = new GridBagConstraints();
 		gbc_comboBox.fill = GridBagConstraints.HORIZONTAL;
@@ -228,14 +234,14 @@ public class Ventana_principal extends JFrame {
 		gbc_lblPoblacin.gridy = 1;
 		panelResultados.add(lblPoblacin, gbc_lblPoblacin);
 
-		JLabel label_2 = new JLabel("0");
+		label_2 = new JLabel("0");
 		GridBagConstraints gbc_label_2 = new GridBagConstraints();
 		gbc_label_2.insets = new Insets(0, 0, 5, 5);
 		gbc_label_2.gridx = 2;
 		gbc_label_2.gridy = 1;
 		panelResultados.add(label_2, gbc_label_2);
 
-		JLabel label = new JLabel("0");
+		label = new JLabel("0");
 		GridBagConstraints gbc_label = new GridBagConstraints();
 		gbc_label.insets = new Insets(0, 0, 5, 5);
 		gbc_label.gridx = 2;
@@ -250,7 +256,7 @@ public class Ventana_principal extends JFrame {
 		gbc_lblNumContagiados.gridy = 2;
 		panelResultados.add(lblNumContagiados, gbc_lblNumContagiados);
 
-		JLabel label_1 = new JLabel("0");
+		label_1 = new JLabel("0");
 		GridBagConstraints gbc_label_1 = new GridBagConstraints();
 		gbc_label_1.insets = new Insets(0, 0, 5, 5);
 		gbc_label_1.gridx = 2;
@@ -301,15 +307,59 @@ public class Ventana_principal extends JFrame {
 
 	private class SeleccionarLocalidad implements ItemListener {
 		public void itemStateChanged(ItemEvent e) {
-			System.out.println("Bien");
-			// Luego ya si eso
+			String nombre = (String) e.getItem();
+			Localidad l = Localidad.read(nombre);
+			
+			//Cargar mapa
+			double[] coordenadas=l.getCoordenadas();
+			String url = "https://www.openstreetmap.org/?";
+			String latitud = "mlat="+coordenadas[1];
+			String longitud = "&mlon="+coordenadas[0];
+			
+			url += latitud + longitud;
+			
+			browser.navigation().loadUrl(url);
+
 		}
 
 	}
 
 	private class ButtonRealizarBusquedaActionListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
+			//Cargar localidad
+			
+			String localidad = comboBox.getSelectedItem().toString();
+			Localidad l = Localidad.read(localidad);
+			//Cargar estadísticas
+			String poblacion = ""+l.getPoblacion();
+			label_2.setText(poblacion);
+			
+			// Aquí cambiamos el formato de fecha para que MySQL se lo trague
+			Date fecha = calendar.getDate();
+			String pattern = "yyyy-MM-dd";
+			SimpleDateFormat formatter = new SimpleDateFormat(pattern);
+			String fechaMYSQL = formatter.format(fecha);
+			
+			//Mostramos contagiados
+			Vector<Contagiado> contagiados = Contagiado.readAllByDate(localidad, fechaMYSQL);
+			
+			label.setText(""+contagiados.size());
+			
+			//Mostramos curados
+			int curados = calcularCurados(contagiados);
+			label_1.setText(""+curados);
+		}
 
+		private int calcularCurados(Vector<Contagiado> contagiados) {
+			int curados = 0;
+			
+			for(int i=0; i<contagiados.size(); i++) {
+				if (contagiados.elementAt(i).isCurado()){
+					curados++;
+				}
+			}
+			
+			return curados;
 		}
 
 	}
@@ -318,12 +368,12 @@ public class Ventana_principal extends JFrame {
 		public void actionPerformed(ActionEvent e) {
 			String localidad = comboBox.getSelectedItem().toString();
 
-			//Aquí cambiamos el formato de fecha para que MySQL se lo trague
+			// Aquí cambiamos el formato de fecha para que MySQL se lo trague
 			Date fecha = calendar.getDate();
 			String pattern = "yyyy-MM-dd";
 			SimpleDateFormat formatter = new SimpleDateFormat(pattern);
 			String fechaMYSQL = formatter.format(fecha);
-			
+
 			Datos_contagiados frameDC = new Datos_contagiados(localidad, fechaMYSQL);
 
 			frameDC.setVisible(true);

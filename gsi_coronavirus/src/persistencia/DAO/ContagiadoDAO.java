@@ -72,7 +72,7 @@ public class ContagiadoDAO {
 				String lugar_contagio = (String) tmp.elementAt(2);
 				Date fecha_contagio = (Date)tmp.elementAt(3);
 				String localidad_contagio = (String) tmp.elementAt(4);
-				boolean esta_curado = Boolean.parseBoolean(tmp.elementAt(5).toString());
+				boolean esta_curado = convertir_booleano(tmp.elementAt(5));
 				Contagiado cont_tempor = new Contagiado(dni, nombre, lugar_contagio, fecha_contagio, localidad_contagio,
 						esta_curado);
 				c.add(cont_tempor);
@@ -83,6 +83,16 @@ public class ContagiadoDAO {
 			e.printStackTrace();
 		}
 		return c;
+	}
+
+	private static boolean convertir_booleano(Object elementAt) {
+		int valor = Integer.parseInt(elementAt.toString());
+		if (valor == 1) {
+			return true;
+		}
+		else {
+		return false;
+		}
 	}
 
 }

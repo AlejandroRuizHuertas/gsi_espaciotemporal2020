@@ -8,6 +8,7 @@ public class Localidad {
 	private String nombre;
 	private double[] coordenadas = new double[2];
 	private int poblacion;
+	private Vector<Contagiado> contagiados;
 	static private LocalidadDAO localidadDAO;
 	
 	public Localidad() {
@@ -30,7 +31,7 @@ public class Localidad {
 		localidadDAO = new LocalidadDAO();
 	}
 	
-	private Vector<Contagiado> contagiados;
+
 
 	public String getNombre() {
 		return nombre;
@@ -70,6 +71,10 @@ public class Localidad {
 		return localidadDAO.readAll();
 	}
 	
+	public static Localidad read(String nombre) {
+		localidadDAO = new LocalidadDAO();
+		return localidadDAO.read(nombre);
+	}
 
 	
 	public String toString() {

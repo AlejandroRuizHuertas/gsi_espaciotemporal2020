@@ -77,22 +77,28 @@ public class Datos_contagiados extends JFrame {
 		table.setCellSelectionEnabled(true);
 		table.setColumnSelectionAllowed(true);
 
-
-		
-		
-		
-		DefaultTableModel modelo = (DefaultTableModel) table.getModel();
-
-		modelo = rellenarDatos(localidad, fecha, modelo);
-
-		table.setModel(modelo);
-
-		
+		table.setModel(new DefaultTableModel(
+			new Object[][] {
+			},
+			new String[] {
+				"DNI", "Nombre", "Lugar de contagio", "Fecha de contagio", "Localidad", "Est\u00E1 curado"
+			}
+		) {
+			Class[] columnTypes = new Class[] {
+				String.class, Object.class, Object.class, Object.class, Object.class, Boolean.class
+			};
+			public Class getColumnClass(int columnIndex) {
+				return columnTypes[columnIndex];
+			}
+		});
 		table.getColumnModel().getColumn(1).setPreferredWidth(91);
 		table.getColumnModel().getColumn(2).setPreferredWidth(129);
 		table.getColumnModel().getColumn(3).setPreferredWidth(117);
 		table.getColumnModel().getColumn(4).setPreferredWidth(113);
 		table.getColumnModel().getColumn(5).setPreferredWidth(58);
+		DefaultTableModel modelo = (DefaultTableModel) table.getModel();
+
+		modelo = rellenarDatos(localidad, fecha, modelo);
 		scrollPane.setViewportView(table);
 
 		btnEnviarAdvertencia = new JButton("Enviar advertencia");
@@ -109,7 +115,7 @@ public class Datos_contagiados extends JFrame {
 		Vector<Contagiado> contagiados = Contagiado.readAllByDate(localidad, fecha);
 
 		Object[] fila = new Object[6];
-		System.out.println(contagiados.size());
+
 		for (int i = 0; i < contagiados.size(); i++) {
 			Contagiado c = contagiados.elementAt(i);
 			fila[0] = c.getDNI();
@@ -118,24 +124,24 @@ public class Datos_contagiados extends JFrame {
 			fila[3] = c.getFecha_contagio().toString();
 			fila[4] = c.getLocalidad_contagio();
 			fila[5] = c.isCurado();
-			
+
 			// Sección 4
 			modelo.addRow(fila);
 		}
-		
-		
+
 		return modelo;
 
 	}
 
 	private class ButtonEnviarActionListener implements ActionListener {
+		
 		public void actionPerformed(ActionEvent e) {
 			int eleccion = JOptionPane.showConfirmDialog(null,
 					"Se va a enviar un correo a las pesonas que han estado en contacto"
 							+ " con los contagiados. \nEsta operación es irreversible. ¿Está seguro?",
 					"Confirmación de envío", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 			if (eleccion == 0)
-				System.exit(0);
+				btnEnviarAdvertencia.setEnabled(false);
 
 		}
 
